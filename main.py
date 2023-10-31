@@ -8,13 +8,13 @@ def main() -> None:
         entry=reg.winreg.KEY_ALL_ACCESS
         )
     
-    # Adds Dayeya!, uses __str__ to print history.
+    # Adds Dayeya!
     root.add_value(reg.winreg.REG_SZ, 'Dayeya!')
-    print(root)
+    print(root.history_to_list())
     
-    # Deletes Dayeya!, uses __str__ to print history.
-    root.add_value('Dayeya!')
-    print(root)
+    # Deletes Dayeya!
+    root.remove_value('Dayeya!')
+    print(root.history_to_list())
     
 if __name__ == "__main__":
     main()

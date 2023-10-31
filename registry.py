@@ -1,13 +1,14 @@
-from mru import MRU
+from typing import Any
 import winreg
+from mru import MRU_List
+
 
 class Registry:
-    
-    MAX = 26
-    DEFAULT = 'a'
-    MRU = 'MRUList'
-    NO_HISTORY = []    
-    SOFTWARE =  r"SOFTWARE\\"
+
+    DEFAULT: str = 'a'
+    MRU: str = 'MRUList'
+    NO_HISTORY: list = []    
+    SOFTWARE: str =  r"SOFTWARE\\"
     
     def __init__(self, reg_loc: int, sub_key: str , entry: int) -> None:
         """
@@ -17,144 +18,134 @@ class Registry:
             reg_loc (int): root
             sub_key (str): sub_key
             entry (int): there is access or not to all keys.
-
         Raises:
-            Exception: _description_
+            Exception: OSError
         """
         try:
             # Open the CURR USER key.
-            self.key = winreg.OpenKeyEx(reg_loc, sub_key, reserved=0, access=entry)
-            self.mru_list = MRU()
+            self._mru_list = MRU_List()
+            self._key = winreg.OpenKeyEx(reg_loc, sub_key, reserved=0, access=entry)
             
         except OSError as e:
             raise Exception(f'{e}, make sure to provide a correct key!')
+    
+    @property
+    def mru_list(self) -> MRU_List:
+        """
+        Getter for _l
+
+        Returns:
+            MRU_List: current MRU_List state.
+        """
+        return self._mru_list
     
     def __del__(self) -> None:
         """
         Delets self.
         """
-        if self.key:
-            winreg.CloseKey(self.key)
+        if self._key:
+            winreg.CloseKey(self._key)
     
-    def unpack_values(self, values: dict, mru: list) -> list:
+    def set_mru(self, data: str) -> None:
         """
-        Unpacks the value of every key in mru list.
+        Sets _mru_list.
 
         Args:
-            values (dict): values to unpack.
-            mru (list): registry MRU list.
-
-        Returns:
-            list: unpacked values.
+            data (Any): data to set MRU / vals with.
         """
-        return [values[name] for name in mru] if mru else []
-    
-    def set_mru(self, mru, key, vals, data) -> None:
-        """
-        Updates vals or mru based on the key.
-
-        Args:
-            mru (_type_): MRU list.
-            key (_type_): Key for checking correct data structure. 
-            vals (_type_): Values of keys.
-            data (_type_): data to set MRU / vals with.
-        """
-        (mru if key == Registry.MRU else vals).__setitem__(key, data)
+        self._mru_list = MRU_List(data)
     
     def history_to_list(self) -> list:
+        """
+        Tracks the history of the regisrty.
+
+        Returns:
+            list: 
+        """
         try:
-            
-            values = {}
-            mru_list = None
-            _, key_values, _ = winreg.OpenKey(self.key)
+            values = dict([])
+            _, key_values, _ = winreg.QueryInfoKey(self._key)
 
             for idx in range(key_values):
-                key_name, data, _ = winreg.EnumValue(self.key, idx)
-                self.set_mru(
-                    mru=mru_list,
-                    key=key_name,
-                    vals=values,
-                    data=data
-                )
+                key_name, data, _ = winreg.EnumValue(self._key, idx)
+                mru = key_name == Registry.MRU
+                if mru:
+                    self.set_mru(data)
+                else:
+                    values[key_name] = data
 
-            return self.unpack_values(values=values, mru=mru_list)
+            return self._mru_list.unpack_values(values)
 
         except WindowsError as e:
             print(f"Error accessing the Registry: {e}")
             return Registry.NO_HISTORY
         
-    def add_value(self, type: int, val: str) -> None:  
+    def add_value(self, type: int, val: str) -> None:
+        """
+        Addsa val as type 'type' to the registry history.
+        
+        Args:
+            val (str): value.
+        """  
         try:
-
             values = dict([])
-            _, key_values, _ = winreg.OpenKey(self.key)
+            _, key_values, _ = winreg.QueryInfoKey(self._key)
 
             for idx in range(key_values):
-                key_name, data, _ = winreg.EnumValue(self.key, idx)
-                
+                key_name, data, _ = winreg.EnumValue(self._key, idx)
                 if key_name == Registry.MRU:
-                    # set mru.
-                    self.set_mru(
-                        mru=self.mru_list,
-                        key=key_name,
-                        vals=values,
-                        data=data
-                    )
+                    self.set_mru(data)
                     break
         
             key_name = ''
-            if len(self.mru_list) == Registry.MAX:
-                key_name = self.mru_list.last
+            if len(self._mru_list.mru) == MRU_List.MAX_LEN:
+                key_name = self._mru_list.last
                 
-            elif not self.mru_list:
+            elif not self._mru_list:
                 key_name = Registry.DEFAULT
                 
             else:
-                biggest = max(self.mru_list)
+                biggest = max(self._mru_list.mru)
                 key_name = chr(ord(biggest))
                 
-            new_mru = key_name + self.mru_list
-            
-            winreg.SetValueEx(self.key, self.mru_list, 0, type, new_mru)
-            winreg.SetValueEx(self.key, key_name, 0, type, val)
+            new_list: MRU_List = self._mru_list + key_name
+            print(new_list)
+            winreg.SetValueEx(self._key, Registry.MRU, 0, type, new_list.mru)
+            winreg.SetValueEx(self._key, key_name, 0, type, val)
 
         except OSError as e:
-            print(f"Error accessing the Registry: {e}")
-            return Registry.NO_HISTORY
+            raise Exception(f"Error accessing the Registry: {e}")
         
     def remove_value(self, val: str) -> None:
+        """
+        Removes val from the registry history.
+        
+        Args:
+            val (str): value.
+        """
         try:
-            
             values = dict([])
-            _, key_values, _ = winreg.OpenKey(self.key)
+            _, key_values, _ = winreg.QueryInfoKey(self._key)
 
             for idx in range(key_values):
-                key_name, data, _ = winreg.EnumValue(self.key, idx)
-                
+                key_name, data, _ = winreg.EnumValue(self._key, idx)
                 if key_name == Registry.MRU:
-                    # set mru.
-                    self.set_mru(
-                        mru=self.mru_list,
-                        key=key_name,
-                        vals=values,
-                        data=data
-                    )
+                    self.set_mru(data)
                     break
         
-            mruList = mruList.replace(val, '')
-            
-            winreg.SetValueEx(self.key, self.mru_list, 0, type, self.mru_list)
-            winreg.SetValueEx(self.key, key_name, 0, type, val)
+            new_list: MRU_List = MRU_List(self._mru_list.mru.replace(val, ''))
+            print(new_list)
+            winreg.SetValueEx(self._key, Registry.MRU, 0, type, new_list.mru)
+            winreg.SetValueEx(self._key, key_name, 0, type, val)
 
         except OSError as e:
-            print(f"Error accessing the Registry: {e}")
-            return Registry.NO_HISTORY
+            raise Exception(f"Error accessing the Registry: {e}")
         
     def __str__(self) -> str:
         """
         Returns:
             str: History of self. 
         """
-        
-        return self.history_to_list()
+        req_history = self.history_to_list()
+        return req_history
         
