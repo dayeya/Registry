@@ -1,5 +1,3 @@
-
-
 import registry as reg
 
 def main() -> None:
