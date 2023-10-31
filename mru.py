@@ -2,7 +2,7 @@
 class MRU:
     
     def __init__(self) -> None:
-        self.l = []
+        self._l = []
     
     @property
     def last(self) -> int:
@@ -10,4 +10,4 @@ class MRU:
         Returns:
             int: Last key in MRU list.
         """
-        return self.l[-1] if self.l else 'a'
+        return self._l[-1] if self._l else 'a'
