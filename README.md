@@ -1,5 +1,5 @@
 # Registry
-A nice way to access windows registry!
+ Nice way to access the Windows registry!
 
 # Run this program
 Clone this repo by 
