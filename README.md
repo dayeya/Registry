@@ -3,6 +3,10 @@
 
 # Run this program
 Clone this repo by 
-```git clone https://github.com/dayeya/Registry.git```
+``` shell
+git clone https://github.com/dayeya/Registry.git
+```
 Open cmd and type
-```python main.py```
+```shell
+python main.py
+```
