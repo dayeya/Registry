@@ -1,17 +1,12 @@
 class MRU_List:
-    """
-    MRU list, most recently used key.
-    """
-    
     MAX_LEN = 26
-    DEFUALT = []
-    
+    DEFAULT = []
     def __init__(self, mru='') -> None:
         """
         MRU list object.
 
         Args:
-            mru (list, optional): MRU list of keys. Defaults to empty str.
+            MRU (list, optional): MRU list of keys. Defaults to empty str.
         """
         self._mru = mru
     
@@ -30,7 +25,7 @@ class MRU_List:
         if isinstance(key, str):
             return MRU_List(key + self._mru)
         else:
-            raise TypeError(f'Unsupported operand type for +: {str(type(key))}')
+            raise TypeError(f'unsupported operand type for +: {str(type(key))}')
     
     @property
     def mru(self) -> str:
@@ -50,7 +45,7 @@ class MRU_List:
            
     def unpack_values(self, values: dict) -> list:
         """
-        Unpacks the value of every key in mru list.
+        Unpacks the value of every key in MRU list.
 
         Args:
             values (dict): values to unpack.
@@ -59,7 +54,7 @@ class MRU_List:
             list: unpacked values.
         """
         mru = self.mru
-        return [values[name] for name in mru] if mru else MRU_List.DEFUALT
+        return [values[name] for name in mru] if mru else MRU_List.DEFAULT
     
     def __str__(self) -> str:
         """
