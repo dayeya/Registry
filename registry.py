@@ -109,7 +109,6 @@ class Registry:
                 key_name = chr(ord(biggest))
                 
             new_list: MRU_List = self._mru_list + key_name
-            print(new_list)
             winreg.SetValueEx(self._key, Registry.MRU, 0, type, new_list.mru)
             winreg.SetValueEx(self._key, key_name, 0, type, val)
 
@@ -134,7 +133,6 @@ class Registry:
                     break
         
             new_list: MRU_List = MRU_List(self._mru_list.mru.replace(val, ''))
-            print(new_list)
             winreg.SetValueEx(self._key, Registry.MRU, 0, type, new_list.mru)
             winreg.SetValueEx(self._key, key_name, 0, type, val)
 
